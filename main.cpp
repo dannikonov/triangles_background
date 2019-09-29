@@ -1,6 +1,9 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <boost/thread/thread.hpp>
+#include <time.h>
+#include <thread>
+#include <iomanip>
 
 #define SQRT3 1.73205080756887729352
 
@@ -39,10 +42,20 @@ void drawTriangle(double x, double y, double a, double angle, cv::Mat *m) {
     Result.copyTo(*m, mask);
 }
 
+void draw(int r, int c, double h, int a, cv::Mat *m) {
+    drawTriangle(c * a, r * h, a, 0, m);
+    drawTriangle(-a / 2 + c * a, r * h, a, 180, m);
+    drawTriangle(-a / 2 + c * a, (r + 1) * h, a, 0, m);
+    drawTriangle(c * a, (r + 1) * h, a, 180, m);
+}
 
 int main(int argc, char *argv[]) {
+    time_t start, end;
+    time(&start);
+
     int CORES = static_cast<int>(boost::thread::hardware_concurrency());
-    std::cout << CORES;
+    clock_t tStart = clock();
+
 
 //    return 0;
     std::string filename = "";
@@ -69,16 +82,24 @@ int main(int argc, char *argv[]) {
     cv::Size size(cols * a, rows * h);
     resize(m, m, size);
 
+    std::vector<std::thread> t;
+
     for (int r = 0; r < rows; r += 2) {
         for (int c = 0; c < cols + 1; c++) {
-            drawTriangle(c * a, r * h, a, 0, &m);
-            drawTriangle(-a / 2 + c * a, r * h, a, 180, &m);
-            drawTriangle(-a / 2 + c * a, (r + 1) * h, a, 0, &m);
-            drawTriangle(c * a, (r + 1) * h, a, 180, &m);
+            t.push_back(std::move(std::thread(draw, r, c, h, a, &m)));
+        }
+
+        for (std::thread &th : t) {
+            if (th.joinable()) {
+                th.join();
+            }
         }
     }
 
 //    drawCircle(50, 550, 50, cv::BORDER_REPLICATE, &m);
+    std::cout << std::endl << "Time taken: " << (double) (clock() - tStart) / CLOCKS_PER_SEC << std::endl;
+    time(&end);
+    std::cout<< std::fixed  << double(end - start) << std::setprecision(5) << std::endl;
 
     imshow("Blur with mask", m);
 
