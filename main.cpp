@@ -7,46 +7,20 @@
 
 #define SQRT3 1.73205080756887729352
 
-void drawCircle(int x, int y, int r, int border, cv::Mat *m) {
-    cv::Mat mask = cv::Mat::zeros(m->size(), m->type());
-    circle(mask, cv::Point(x, y), r, cv::Scalar(255, 255, 255), -1, 8, 0);
-    cv::Mat roi;
-    cv::blur(*m & mask, roi, cv::Size(11, 11), cv::Point(-1, -1), border);
-    cv::Mat Result = (*m & (~mask)) + roi;
-    Result.copyTo(*m, mask);
-}
-
-void drawTriangle(double x, double y, double a, double angle, cv::Mat *m) {
+void drawTriangle(cv::Point *points, cv::Mat *m) {
     cv::Mat mask = cv::Mat::zeros(m->size(), m->type());
 
-    cv::Point rook_points[3];
-    rook_points[0] = cv::Point(x, y);
-    rook_points[1] = cv::Point(x + a, y);
-    rook_points[2] = cv::Point(x + a / 2, y + SQRT3 * a / 2);
-
-    const cv::Point *ppt[1] = {rook_points};
+    const cv::Point *ppt[1] = {points};
     int npt[] = {3};
 
     fillPoly(mask, ppt, npt, 1, cv::Scalar(255, 255, 255), 8);
 
-    if (angle) {
-        cv::Point2f pc(x + a / 2., y + SQRT3 * a / 4);
-        cv::Mat dst = cv::getRotationMatrix2D(pc, angle, 1.0);
-        cv::Mat dst2;
-        cv::warpAffine(mask, mask, dst, mask.size());
-    }
-
     cv::Mat roi;
-    cv::blur(*m & mask, roi, cv::Size(11, 11), cv::Point(-1, -1));
+//    cv::blur(*m & mask, roi, cv::Size(4, 4));
+    cv::blur(*m, roi, cv::Size(14, 14));
+
     cv::Mat Result = (*m & (~mask)) + roi;
     Result.copyTo(*m, mask);
-}
-
-void draw(int r, int c, double h, int a, cv::Mat *m) {
-    drawTriangle(c * a, r * h, a, 0, m);
-    drawTriangle(-a / 2 + c * a, r * h, a, 180, m);
-    drawTriangle(-a / 2 + c * a, (r + 1) * h, a, 0, m);
-    drawTriangle(c * a, (r + 1) * h, a, 180, m);
 }
 
 int main(int argc, char *argv[]) {
@@ -55,7 +29,6 @@ int main(int argc, char *argv[]) {
 
     int CORES = static_cast<int>(boost::thread::hardware_concurrency());
     clock_t tStart = clock();
-
 
 //    return 0;
     std::string filename = "";
@@ -73,33 +46,122 @@ int main(int argc, char *argv[]) {
 
     cv::Mat m = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
 
-    int img_h = m.size().height;
     int img_w = m.size().width;
+    int img_h = m.size().height;
 
-    int cols = ceil(img_w / a);
-    int rows = ceil(img_h / h);
+    int cols = round(img_w / a);
+    int rows = round(img_h / h);
 
-    cv::Size size(cols * a, rows * h);
+    int img_new_w = round(cols * a);
+    int img_new_h = round(rows * h);
+
+    std::cout << "w: " << img_new_w << " h: " << img_new_h << std::endl;
+    std::cout << "cols: " << cols << " rows: " << rows << std::endl;
+    std::cout << "a: " << a << " h: " << h << std::endl;
+    std::cout << "h coef: " << (double) (img_h - img_new_h) * 100 / img_h << std::setprecision(5) << "%"
+              << " w coef: " << (double) (img_w - img_new_w) * 100 / img_w << std::setprecision(5) << "%" << std::endl;
+
+    int type = 0; // up|down
+    std::vector<std::vector<cv::Point>> points; // points[rows + 1][cols + 2]
+    for (int r = 0; r < rows + 1; r++) {
+        std::vector<cv::Point> t;//[cols + 2];
+        if ((r + type) % 2) {
+            for (int c = 0; c < cols + 1; c++) {
+                int x = round(c * a);
+                if (x >= img_new_w) {
+                    x = img_new_w - 1;
+                }
+                int y = round(r * h);
+                t.emplace_back(cv::Point(x, y));
+            }
+        } else {
+            for (int c = 0; c < cols + 2; c++) {
+                int x = c ? round((c - 0.5) * a) : 0;
+                if (x >= img_new_w) {
+                    x = img_new_w - 1;
+                }
+                int y = round(r * h);
+                t.emplace_back(cv::Point(x, y));
+            }
+        }
+        points.push_back(t);
+    }
+
+
+    cv::Size size(img_new_w, img_new_h);
     resize(m, m, size);
 
     std::vector<std::thread> t;
 
-    for (int r = 0; r < rows; r += 2) {
-        for (int c = 0; c < cols + 1; c++) {
-            t.push_back(std::move(std::thread(draw, r, c, h, a, &m)));
-        }
+    for (int r = 0; r < rows; r++) {
+        if (r % 2) {
+            for (int c = 0; c < cols + 1; c++) {
+                // half
+                cv::Point p1[3] = {
+                        points[r][c],
+                        points[r + 1][c + 1],
+                        points[r + 1][c],
+                };
+                drawTriangle(p1, &m);
+                std::cout << "{" << r << "," << c << "}" << p1[0] << p1[1] << p1[2] << std::endl;
 
-        for (std::thread &th : t) {
-            if (th.joinable()) {
-                th.join();
+                // full
+                if (c != cols) {
+                    cv::Point p2[3] = {
+                            points[r][c],
+                            points[r][c + 1],
+                            points[r + 1][c + 1],
+                    };
+                    drawTriangle(p2, &m);
+                    std::cout << "{" << r << "," << c << "}" << p2[0] << p2[1] << p2[2] << std::endl;
+                }
+            }
+        } else { // 0, 2
+            for (int c = 0; c < cols + 1; c++) {
+                // half
+                cv::Point p2[3] = {
+                        points[r][c],
+                        points[r][c + 1],
+                        points[r + 1][c],
+                };
+                std::cout << "{" << r << "," << c << "}" << p2[0] << p2[1] << p2[2] << std::endl;
+                drawTriangle(p2, &m);
+
+                // full
+                if (c != cols) {
+                    cv::Point p1[3] = {
+                            points[r][c + 1],
+                            points[r + 1][c + 1],
+                            points[r + 1][c],
+                    };
+                    drawTriangle(p1, &m);
+                    std::cout << "{" << r << "," << c << "}" << p1[0] << p1[1] << p1[2] << std::endl;
+                }
             }
         }
     }
 
-//    drawCircle(50, 550, 50, cv::BORDER_REPLICATE, &m);
+//    for (int r = 0; r < rows; r++) {
+//        for (int c = 0; c < cols; c++) {
+//            t.push_back(std::move(std::thread(draw, r, c, h, a, &m)));
+//        }
+//        for (std::thread &th : t) {
+//            if (th.joinable()) {
+//                th.join();
+//            }
+//        }
+//    }
+
+    for (int r = 0; r < points.size(); r++) {
+        for (int c = 0; c < points[r].size(); c++) {
+            std::cout << "{" << r << "," << c << "}" << points[r][c] << "    ";
+        }
+        std::cout << std::endl;
+    }
+
     std::cout << std::endl << "Time taken: " << (double) (clock() - tStart) / CLOCKS_PER_SEC << std::endl;
     time(&end);
-    std::cout<< std::fixed  << double(end - start) << std::setprecision(5) << std::endl;
+    std::cout << std::fixed << double(end - start) << std::setprecision(5) << std::endl;
 
     imshow("Blur with mask", m);
 
