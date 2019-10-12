@@ -7,7 +7,58 @@
 
 #define SQRT3 1.73205080756887729352
 
+void _blur(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    cv::blur(*input, *output, cv::Size(14, 14));
+}
+
+void _fill(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    cv::Mat newmask;
+    cv::cvtColor(*mask, newmask, cv::COLOR_RGB2GRAY);
+    output->setTo(cv::mean(*input, newmask));
+}
+
+void _nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    *output = *input;
+}
+
+void (*callbacks[3])(cv::Mat *input, cv::Mat *output, cv::Mat *mask) = {
+        _blur,
+        _fill,
+        _nothing
+};
+
+int callback_number() {
+    int n = (sizeof(callbacks) / sizeof(*callbacks));
+
+    double p[n - 1];
+    p[0] = 1.0 / 5;
+    p[1] = 1.0 / 6;
+
+    double r_norm = (double) rand() / RAND_MAX;
+    double scale[n + 1];
+    scale[0] = 0;
+    scale[n] = 1;
+    int r = -1;
+    for (int i = 1; i < n; i++) {
+        scale[i] += scale[i - 1] + p[i - 1];
+    }
+
+    for (int i = 0; i < n; i++) {
+        if (scale[i] < r_norm && r_norm <= scale[i + 1]) {
+            r = i;
+        }
+    }
+
+    if (r == -1) {
+        r = n;
+    }
+    std::cout << r_norm << " return : " << r << std::endl;
+    return r;
+}
+
+
 void drawTriangle(cv::Point *points, cv::Mat *m) {
+    std::cout << "p: " << points[0] << points[1] << points[2] << std::endl;
     cv::Mat mask = cv::Mat::zeros(m->size(), m->type());
 
     const cv::Point *ppt[1] = {points};
@@ -15,12 +66,18 @@ void drawTriangle(cv::Point *points, cv::Mat *m) {
 
     fillPoly(mask, ppt, npt, 1, cv::Scalar(255, 255, 255), 8);
 
-    cv::Mat roi;
-//    cv::blur(*m & mask, roi, cv::Size(4, 4));
-    cv::blur(*m, roi, cv::Size(14, 14));
+    cv::Mat roi = cv::Mat::zeros(m->size(), m->type());;
 
-    cv::Mat Result = (*m & (~mask)) + roi;
-    Result.copyTo(*m, mask);
+    int n = callback_number();
+    std::cout << "callback: " << n << std::endl;
+    if (n == (sizeof(callbacks) / sizeof(*callbacks))) {
+        return;
+    } else {
+        callbacks[n](m, &roi, &mask);
+
+        cv::Mat Result = (*m & (~mask)) + roi;
+        Result.copyTo(*m, mask);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -87,55 +144,63 @@ int main(int argc, char *argv[]) {
         points.push_back(t);
     }
 
-
     cv::Size size(img_new_w, img_new_h);
     resize(m, m, size);
 
-    std::vector<std::thread> t;
+//    std::vector<std::thread> t;
 
-    for (int r = 0; r < rows; r++) {
-        if (r % 2) {
-            for (int c = 0; c < cols + 1; c++) {
-                // half
-                cv::Point p1[3] = {
-                        points[r][c],
-                        points[r + 1][c + 1],
-                        points[r + 1][c],
-                };
-                drawTriangle(p1, &m);
-                std::cout << "{" << r << "," << c << "}" << p1[0] << p1[1] << p1[2] << std::endl;
-
-                // full
-                if (c != cols) {
-                    cv::Point p2[3] = {
-                            points[r][c],
-                            points[r][c + 1],
-                            points[r + 1][c + 1],
-                    };
-                    drawTriangle(p2, &m);
-                    std::cout << "{" << r << "," << c << "}" << p2[0] << p2[1] << p2[2] << std::endl;
-                }
-            }
-        } else { // 0, 2
-            for (int c = 0; c < cols + 1; c++) {
-                // half
-                cv::Point p2[3] = {
-                        points[r][c],
-                        points[r][c + 1],
-                        points[r + 1][c],
-                };
-                std::cout << "{" << r << "," << c << "}" << p2[0] << p2[1] << p2[2] << std::endl;
-                drawTriangle(p2, &m);
-
-                // full
-                if (c != cols) {
+    int test = false;
+    if (test) {
+        int c = 1, r = 2;
+        cv::Point p1[3] = {
+                points[r][c],
+                points[r + 1][c + 1],
+                points[r + 1][c],
+        };
+        drawTriangle(p1, &m);
+    } else {
+        for (int r = 0; r < rows; r++) {
+            if (r % 2) {
+                for (int c = 0; c < cols + 1; c++) {
+                    // half
                     cv::Point p1[3] = {
-                            points[r][c + 1],
+                            points[r][c],
                             points[r + 1][c + 1],
                             points[r + 1][c],
                     };
+
                     drawTriangle(p1, &m);
-                    std::cout << "{" << r << "," << c << "}" << p1[0] << p1[1] << p1[2] << std::endl;
+
+                    // full
+                    if (c != cols) {
+                        cv::Point p2[3] = {
+                                points[r][c],
+                                points[r][c + 1],
+                                points[r + 1][c + 1],
+                        };
+                        drawTriangle(p2, &m);
+                    }
+                }
+            } else {
+                for (int c = 0; c < cols + 1; c++) {
+                    // half
+                    cv::Point p2[3] = {
+                            points[r][c],
+                            points[r][c + 1],
+                            points[r + 1][c],
+                    };
+                    drawTriangle(p2, &m);
+
+                    // full
+                    if (c != cols) {
+                        cv::Point p1[3] = {
+                                points[r][c + 1],
+                                points[r + 1][c + 1],
+                                points[r + 1][c],
+                        };
+
+                        drawTriangle(p1, &m);
+                    }
                 }
             }
         }
@@ -152,6 +217,7 @@ int main(int argc, char *argv[]) {
 //        }
 //    }
 
+    std::cout << std::endl << "points:" << std::endl;
     for (int r = 0; r < points.size(); r++) {
         for (int c = 0; c < points[r].size(); c++) {
             std::cout << "{" << r << "," << c << "}" << points[r][c] << "    ";
