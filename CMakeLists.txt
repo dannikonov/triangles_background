@@ -13,9 +13,13 @@ if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif ()
 
-add_compile_options(-std=c++0x)
+#add_compile_options(-std=c++0x)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-add_executable(triangulate main.cpp)
+add_executable(triangulate main.cpp Painter.cpp Painter.h)
 
 target_link_libraries(triangulate ${Boost_LIBRARIES} ${OpenCV_LIBS})
