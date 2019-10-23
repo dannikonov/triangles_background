@@ -2,18 +2,13 @@
 
 // private
 void Painter::_calculate_scale() {
-    int n = (sizeof(_callbacks) / sizeof(*_callbacks));
-    std::cout << "n: " << n << std::endl;
+    int n = _callbacks.size();
+    _scale.insert(_scale.begin(), 1, 0);
+    _scale.insert(_scale.end(), 1, 1);
 
-    double p[n - 1];
-    p[0] = 1.0 / 3;
-    p[1] = 1.0 / 4;
 
-    _scale[0] = 0;
-    _scale[n] = 1;
-
-    for (int i = 1; i < n; i++) {
-        _scale[i] += _scale[i - 1] + p[i - 1];
+    for (int i = 1; i <= n; i++) {
+        _scale[i] += _scale[i - 1];
     }
 }
 
@@ -47,10 +42,12 @@ void Painter::_calculate_points() {
 }
 
 int Painter::_callback() {
-    int n = (sizeof(_callbacks) / sizeof(*_callbacks));
+    int n = _callbacks.size();
     int r = -1;
 
     double r_norm = (double) rand() / RAND_MAX;
+
+
     for (int i = 0; i < n; i++) {
         if (_scale[i] < r_norm && r_norm <= _scale[i + 1]) {
             r = i;
@@ -77,7 +74,8 @@ void Painter::_drawTriangle(cv::Point *points, cv::Mat *m) {
 
     int n = _callback();
     std::cout << "callback: " << n << std::endl;
-    if (n == (sizeof(_callbacks) / sizeof(*_callbacks))) {
+
+    if (n == _callbacks.size()) {
         return;
     } else {
         CALLBACK f = _callbacks[n];
@@ -170,11 +168,19 @@ Painter::Painter(std::string filename, int a) :
                 &Painter::_blur,
                 &Painter::_fill,
                 &Painter::_nothing
-        } {
+        },
+        _scale{1.0 / 3, 1.0 / 4, 1.0 / 3} {
 
     _calculate_scale();
 
-    _img = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);
+    for (auto i : _scale) {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+
+
+    _img = cv::imread(_filename, 1);
+//    _img = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);
 
     int img_w = _img.size().width;
     int img_h = _img.size().height;

@@ -4,6 +4,7 @@
 #define SQRT3 1.73205080756887729352
 
 #include <opencv2/opencv.hpp>
+//#include <opencv4/opencv2/opencv.hpp>
 #include <iostream>
 #include <iomanip>
 
@@ -27,8 +28,7 @@ private:
     int _rows;
 
     std::vector<std::vector<cv::Point>> _points;
-//    std::vector<double> _scale;
-    double _scale[4];
+    std::vector<double> _scale;
 
     void _calculate_scale();
 
@@ -41,7 +41,8 @@ private:
     void _draw();
 
     // callbacks
-    CALLBACK _callbacks[3];
+    std::vector<CALLBACK> _callbacks;
+
     void _blur(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
     void _fill(cv::Mat *input, cv::Mat *output, cv::Mat *mask);

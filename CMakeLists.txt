@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(triangulate)
 
 set(CMAKE_CXX_STANDARD 14)
+set(OpenCV_DIR "/usr/local/Cellar/opencv/4.1.2/lib/cmake/opencv4")
+
 find_package(OpenCV REQUIRED)
 find_package(Boost COMPONENTS system filesystem thread REQUIRED)
 
