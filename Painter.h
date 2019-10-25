@@ -15,6 +15,9 @@
 //    int w;
 //};
 
+using std::cout;
+using std::endl;
+
 class Painter {
 private:
     typedef void (Painter::*CALLBACK)(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
@@ -47,9 +50,17 @@ private:
 
     void _fill(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
+    void _bw(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+
+    void _inc_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+
+    void _dec_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+
+    void _inc_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+
+    void _dec_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+
     void _nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
-
-
 
 public:
     Painter(std::string filename, int a);

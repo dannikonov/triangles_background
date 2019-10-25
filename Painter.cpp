@@ -6,7 +6,6 @@ void Painter::_calculate_scale() {
     _scale.insert(_scale.begin(), 1, 0);
     _scale.insert(_scale.end(), 1, 1);
 
-
     for (int i = 1; i <= n; i++) {
         _scale[i] += _scale[i - 1];
     }
@@ -62,7 +61,7 @@ int Painter::_callback() {
 }
 
 void Painter::_drawTriangle(cv::Point *points, cv::Mat *m) {
-    std::cout << "p: " << points[0] << points[1] << points[2] << std::endl;
+    cout << "p: " << points[0] << points[1] << points[2] << endl;
     cv::Mat mask = cv::Mat::zeros(m->size(), m->type());
 
     const cv::Point *ppt[1] = {points};
@@ -73,7 +72,7 @@ void Painter::_drawTriangle(cv::Point *points, cv::Mat *m) {
     cv::Mat roi = cv::Mat::zeros(m->size(), m->type());;
 
     int n = _callback();
-    std::cout << "callback: " << n << std::endl;
+    cout << "callback: " << n << endl;
 
     if (n == _callbacks.size()) {
         return;
@@ -150,9 +149,35 @@ void Painter::_blur(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
 }
 
 void Painter::_fill(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
-    cv::Mat newmask;
-    cv::cvtColor(*mask, newmask, cv::COLOR_RGB2GRAY);
-    output->setTo(cv::mean(*input, newmask));
+    cv::Mat tmp;
+    cv::cvtColor(*mask, tmp, cv::COLOR_RGB2GRAY);
+    output->setTo(cv::mean(*input, tmp));
+}
+
+void Painter::_bw(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    cv::Mat tmp;
+
+    cv::cvtColor(*input, tmp, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(tmp, tmp, cv::COLOR_GRAY2RGB);
+    tmp.convertTo(tmp, CV_8UC3);
+
+    tmp.copyTo(*output, *mask);
+}
+
+void Painter::_inc_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    input->convertTo(*output, CV_8UC3, 1, 20);
+}
+
+void Painter::_dec_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    input->convertTo(*output, CV_8UC3, 1, -20);
+}
+
+void Painter::_inc_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    input->convertTo(*output, CV_8UC3, 1.2, 0);
+}
+
+void Painter::_dec_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    input->convertTo(*output, CV_8UC3, 0.8, 0);
 }
 
 void Painter::_nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
@@ -167,20 +192,32 @@ Painter::Painter(std::string filename, int a) :
         _callbacks{
                 &Painter::_blur,
                 &Painter::_fill,
+                &Painter::_bw,
+
+                &Painter::_inc_saturate,
+                &Painter::_dec_saturate,
+
+                &Painter::_inc_lightness,
+                &Painter::_dec_lightness,
+
                 &Painter::_nothing
         },
-        _scale{1.0 / 3, 1.0 / 4, 1.0 / 3} {
+        _scale{1.0 / 6, 1.0 / 10, 1.0 / 10,
+               1.0 / 6, 1.0 / 6,
+               1.0 / 6, 1.0 / 6,
+               1} {
 
     _calculate_scale();
 
     for (auto i : _scale) {
-        std::cout << i << " ";
+        cout << i << " ";
     }
-    std::cout << std::endl;
+    cout << endl;
 
 
-    _img = cv::imread(_filename, 1);
-//    _img = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);
+//    _img = cv::imread(_filename, 1);
+    _img = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);
+    cout << "type " << _img.type() << " " << CV_8UC3 << endl;
 
     int img_w = _img.size().width;
     int img_h = _img.size().height;
@@ -191,11 +228,11 @@ Painter::Painter(std::string filename, int a) :
     int img_new_w = round(_cols * _a);
     int img_new_h = round(_rows * _h);
 
-    std::cout << "w: " << img_new_w << " h: " << img_new_h << std::endl;
-    std::cout << "cols: " << _cols << " rows: " << _rows << std::endl;
-    std::cout << "a: " << a << " h: " << _h << std::endl;
-    std::cout << "h coef: " << (double) (img_h - img_new_h) * 100 / img_h << std::setprecision(5) << "%"
-              << " w coef: " << (double) (img_w - img_new_w) * 100 / img_w << std::setprecision(5) << "%" << std::endl;
+    cout << "w: " << img_new_w << " h: " << img_new_h << endl;
+    cout << "cols: " << _cols << " rows: " << _rows << endl;
+    cout << "a: " << a << " h: " << _h << endl;
+    cout << "h coef: " << (double) (img_h - img_new_h) * 100 / img_h << std::setprecision(5) << "%"
+         << " w coef: " << (double) (img_w - img_new_w) * 100 / img_w << std::setprecision(5) << "%" << endl;
 
     _size = cv::Size(img_new_w, img_new_h);
     resize(_img, _img, _size);

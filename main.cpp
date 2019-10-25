@@ -42,17 +42,17 @@ int main(int argc, char *argv[]) {
 //        }
 //    }
 
-//    std::cout << std::endl << "points:" << std::endl;
+//    cout << endl << "points:" << endl;
 //    for (int r = 0; r < points.size(); r++) {
 //        for (int c = 0; c < points[r].size(); c++) {
-//            std::cout << "{" << r << "," << c << "}" << points[r][c] << "    ";
+//            cout << "{" << r << "," << c << "}" << points[r][c] << "    ";
 //        }
-//        std::cout << std::endl;
+//        cout << endl;
 //    }
 
-    std::cout << std::endl << "Time taken: " << (double) (clock() - tStart) / CLOCKS_PER_SEC << std::endl;
+    cout << endl << "Time taken: " << (double) (clock() - tStart) / CLOCKS_PER_SEC << endl;
     time(&end);
-    std::cout << std::fixed << double(end - start) << std::setprecision(5) << std::endl;
+    cout << std::fixed << double(end - start) << std::setprecision(5) << endl;
 
 
     return 0;
