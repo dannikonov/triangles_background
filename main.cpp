@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     Painter *p = new Painter(filename, a);
     p->show();
-//    p->save("/tmp/test2.jpg");
+//    p->save("/tmp/test2_out.jpg");
 
     delete p;
 

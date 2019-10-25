@@ -60,29 +60,25 @@ int Painter::_callback() {
     return r;
 }
 
-void Painter::_drawTriangle(cv::Point *points, cv::Mat *m) {
+void Painter::_addTriangle(cv::Point *points) {
     cout << "p: " << points[0] << points[1] << points[2] << endl;
-    cv::Mat mask = cv::Mat::zeros(m->size(), m->type());
+    int n = _callback();
+    cout << "callback: " << n << endl;
 
     const cv::Point *ppt[1] = {points};
     int npt[] = {3};
 
-    fillPoly(mask, ppt, npt, 1, cv::Scalar(255, 255, 255), 8);
+    fillPoly(_layers[n], ppt, npt, 1, cv::Scalar(255, 255, 255), 8);
+}
 
-    cv::Mat roi = cv::Mat::zeros(m->size(), m->type());;
+void Painter::_drawLayer(int index) {
+    cv::Mat roi = cv::Mat::zeros(_img.size(), _img.type());
 
-    int n = _callback();
-    cout << "callback: " << n << endl;
+    CALLBACK f = _callbacks[index];
+    (this->*f)(&_img, &roi, &_layers[index]);
 
-    if (n == _callbacks.size()) {
-        return;
-    } else {
-        CALLBACK f = _callbacks[n];
-        (this->*f)(&_img, &roi, &mask);
-    }
-    cv::Mat Result = (*m & (~mask)) + roi;
-    Result.copyTo(*m, mask);
-//    }
+    cv::Mat Result = (_img & (~_layers[index])) + roi;
+    Result.copyTo(_img, _layers[index]);
 }
 
 void Painter::_draw() {
@@ -94,7 +90,7 @@ void Painter::_draw() {
                 _points[r + 1][c + 1],
                 _points[r + 1][c],
         };
-        _drawTriangle(p1, &_img);
+        _addTriangle(p1);
     } else {
         for (int r = 0; r < _rows; r++) {
             if (r % 2) {
@@ -106,7 +102,7 @@ void Painter::_draw() {
                             _points[r + 1][c],
                     };
 
-                    _drawTriangle(p1, &_img);
+                    _addTriangle(p1);
 
                     // full
                     if (c != _cols) {
@@ -115,7 +111,7 @@ void Painter::_draw() {
                                 _points[r][c + 1],
                                 _points[r + 1][c + 1],
                         };
-                        _drawTriangle(p2, &_img);
+                        _addTriangle(p2);
                     }
                 }
             } else {
@@ -126,7 +122,7 @@ void Painter::_draw() {
                             _points[r][c + 1],
                             _points[r + 1][c],
                     };
-                    _drawTriangle(p2, &_img);
+                    _addTriangle(p2);
 
                     // full
                     if (c != _cols) {
@@ -136,11 +132,16 @@ void Painter::_draw() {
                                 _points[r + 1][c],
                         };
 
-                        _drawTriangle(p1, &_img);
+                        _addTriangle(p1);
                     }
                 }
             }
         }
+    }
+
+
+    for (int i = 0; i < _callbacks.size(); i++) {
+        _drawLayer(i);
     }
 }
 
@@ -217,7 +218,6 @@ Painter::Painter(std::string filename, int a) :
 
 //    _img = cv::imread(_filename, 1);
     _img = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);
-    cout << "type " << _img.type() << " " << CV_8UC3 << endl;
 
     int img_w = _img.size().width;
     int img_h = _img.size().height;
@@ -238,6 +238,10 @@ Painter::Painter(std::string filename, int a) :
     resize(_img, _img, _size);
 
     _calculate_points();
+
+    for (int i = 0; i < _callbacks.size(); i++) {
+        _layers.push_back(cv::Mat::zeros(_img.size(), _img.type()));
+    }
 
     _draw();
 }

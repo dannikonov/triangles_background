@@ -32,6 +32,7 @@ private:
 
     std::vector<std::vector<cv::Point>> _points;
     std::vector<double> _scale;
+    std::vector<cv::Mat> _layers;
 
     void _calculate_scale();
 
@@ -39,7 +40,9 @@ private:
 
     int _callback();
 
-    void _drawTriangle(cv::Point *points, cv::Mat *m);
+    void _addTriangle(cv::Point *points);
+
+    void _drawLayer(int index);
 
     void _draw();
 
