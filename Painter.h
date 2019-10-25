@@ -5,6 +5,8 @@
 
 #include <opencv2/opencv.hpp>
 //#include <opencv4/opencv2/opencv.hpp>
+//#include <boost/thread/thread.hpp>
+#include <thread>
 #include <iostream>
 #include <iomanip>
 

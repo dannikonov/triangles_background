@@ -139,9 +139,15 @@ void Painter::_draw() {
         }
     }
 
-
+    std::vector<std::thread> t;
     for (int i = 0; i < _callbacks.size(); i++) {
-        _drawLayer(i);
+        t.push_back(std::move(std::thread(&Painter::_drawLayer, this, i)));
+    }
+
+    for (std::thread &th : t) {
+        if (th.joinable()) {
+            th.join();
+        }
     }
 }
 
