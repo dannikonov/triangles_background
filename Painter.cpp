@@ -36,7 +36,6 @@ void Painter::_calculate_points() {
             }
         }
         _points.push_back(t);
-
     }
 }
 
@@ -45,7 +44,6 @@ int Painter::_callback() {
     int r = -1;
 
     double r_norm = (double) rand() / RAND_MAX;
-
 
     for (int i = 0; i < n; i++) {
         if (_scale[i] < r_norm && r_norm <= _scale[i + 1]) {
@@ -61,14 +59,11 @@ int Painter::_callback() {
 }
 
 void Painter::_addTriangle(cv::Point *points) {
-    cout << "p: " << points[0] << points[1] << points[2] << endl;
-    int n = _callback();
-    cout << "callback: " << n << endl;
+    int index = _callback();
+    cout << "callback: " << index << endl;
+    cout << "add: " << points[0] << points[1] << points[2] << " to layer" << index << endl;
 
-    const cv::Point *ppt[1] = {points};
-    int npt[] = {3};
-
-    fillPoly(_layers[n], ppt, npt, 1, cv::Scalar(255, 255, 255), 8);
+    fillConvexPoly(_layers[index], points, 3, cv::Scalar(255, 255, 255), 8);
 }
 
 void Painter::_drawLayer(int index) {
@@ -196,6 +191,7 @@ Painter::Painter(std::string filename, int a) :
         _filename(filename),
         _a(a),
         _h(SQRT3 * a / 2),
+//        _step(4),
         _callbacks{
                 &Painter::_blur,
                 &Painter::_fill,

@@ -31,6 +31,7 @@ private:
     cv::Size _size;
     int _cols;
     int _rows;
+//    int _step;
 
     std::vector<std::vector<cv::Point>> _points;
     std::vector<double> _scale;
