@@ -25,13 +25,13 @@ private:
     typedef void (Painter::*CALLBACK)(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
     std::string _filename;
-    int _a;
+    double _a;
     double _h;
     cv::Mat _img;
     cv::Size _size;
     int _cols;
     int _rows;
-//    int _step;
+    int _step;
 
     std::vector<std::vector<cv::Point>> _points;
     std::vector<double> _scale;
@@ -44,6 +44,7 @@ private:
     int _callback();
 
     void _addTriangle(cv::Point *points);
+    void _addSmallTriangle(cv::Point *points);
 
     void _drawLayer(int index);
 

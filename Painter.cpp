@@ -14,28 +14,36 @@ void Painter::_calculate_scale() {
 void Painter::_calculate_points() {
     int type = 0; // up|down // @todo test different modes!
 
-    for (int r = 0; r < _rows + 1; r++) {
-        std::vector<cv::Point> t;//[cols + 2];
-        if ((r + type) % 2) {
-            for (int c = 0; c < _cols + 1; c++) {
+    for (int r = 0; r <= _rows; r++) {
+        std::vector<cv::Point> row;
+        int y = round(r * _h);
+
+        if (r % 2) {
+            for (int c = 0; c <= _cols; c++) {
                 int x = round(c * _a);
                 if (x >= _size.width) {
                     x = _size.width - 1;
                 }
-                int y = round(r * _h);
-                t.emplace_back(cv::Point(x, y));
+                row.emplace_back(cv::Point(x, y));
             }
         } else {
-            for (int c = 0; c < _cols + 2; c++) {
+            for (int c = 0; c <= _cols + 1; c++) {
                 int x = c ? round((c - 0.5) * _a) : 0;
                 if (x >= _size.width) {
                     x = _size.width - 1;
                 }
-                int y = round(r * _h);
-                t.emplace_back(cv::Point(x, y));
+                row.emplace_back(cv::Point(x, y));
             }
         }
-        _points.push_back(t);
+
+        _points.push_back(row);
+    }
+
+    for (auto i : _points) {
+        for (auto p : i) {
+            cout << p;
+        }
+        cout << endl;
     }
 }
 
@@ -61,9 +69,34 @@ int Painter::_callback() {
 void Painter::_addTriangle(cv::Point *points) {
     int index = _callback();
     cout << "callback: " << index << endl;
-    cout << "add: " << points[0] << points[1] << points[2] << " to layer" << index << endl;
+
+    _addSmallTriangle(points);
 
     fillConvexPoly(_layers[index], points, 3, cv::Scalar(255, 255, 255), 8);
+}
+
+void Painter::_addSmallTriangle(cv::Point *points) {
+    int min = 1;
+    int max = _step - 1;
+    int coef = rand() % (max - min) + min;
+    if (rand() % 10 > 6) {
+        cv::Point smallTrianglePoints[3] = {points[0], points[1], points[2]};
+//        int coef = 4;
+        if (smallTrianglePoints[1].y == smallTrianglePoints[2].y) {
+            smallTrianglePoints[0].x += coef * _a / (_step * 2);
+            smallTrianglePoints[0].y += coef * _h / _step;
+            smallTrianglePoints[2].x += coef * _a / _step;
+        }
+
+        if (smallTrianglePoints[0].y == smallTrianglePoints[1].y) {
+            smallTrianglePoints[0].x += coef * _a / _step;
+            smallTrianglePoints[2].x += coef * _a / (_step * 2);
+            smallTrianglePoints[2].y -= coef * _h / _step;
+        }
+
+        _addTriangle(smallTrianglePoints);
+//        fillConvexPoly(_layers[_callback()], smallTrianglePoints, 3, cv::Scalar(255, 255, 255), 8);
+    }
 }
 
 void Painter::_drawLayer(int index) {
@@ -191,7 +224,7 @@ Painter::Painter(std::string filename, int a) :
         _filename(filename),
         _a(a),
         _h(SQRT3 * a / 2),
-//        _step(4),
+        _step(4),
         _callbacks{
                 &Painter::_blur,
                 &Painter::_fill,
@@ -212,10 +245,10 @@ Painter::Painter(std::string filename, int a) :
 
     _calculate_scale();
 
-    for (auto i : _scale) {
-        cout << i << " ";
-    }
-    cout << endl;
+//    for (auto i : _scale) {
+//        cout << i << " ";
+//    }
+//    cout << endl;
 
 
 //    _img = cv::imread(_filename, 1);
