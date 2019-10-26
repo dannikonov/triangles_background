@@ -38,22 +38,15 @@ void Painter::_calculate_points() {
 
         _points.push_back(row);
     }
-
-    for (auto i : _points) {
-        for (auto p : i) {
-            cout << p;
-        }
-        cout << endl;
-    }
 }
 
 int Painter::_callback() {
-    int n = _callbacks.size();
+    int n = _scale.size();
     int r = -1;
 
     double r_norm = (double) rand() / RAND_MAX;
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n - 1; i++) {
         if (_scale[i] < r_norm && r_norm <= _scale[i + 1]) {
             r = i;
         }
@@ -67,31 +60,61 @@ int Painter::_callback() {
 }
 
 void Painter::_addTriangle(cv::Point *points) {
-    int index = _callback();
-    cout << "callback: " << index << endl;
-
     _addSmallTriangle(points);
 
-    fillConvexPoly(_layers[index], points, 3, cv::Scalar(255, 255, 255), 8);
+    fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(255, 255, 255), 8);
 }
 
 void Painter::_addSmallTriangle(cv::Point *points) {
     int min = 1;
     int max = _step - 1;
     int coef = rand() % (max - min) + min;
-    if (rand() % 10 > 6) {
+    double deltaX = coef * _a / _step;
+    double deltaX2 = coef * _a / (_step * 2);
+    double deltaY = coef * _h / _step;
+
+    int rnd = rand() % 10;
+    if (rnd <= 3) {
         cv::Point smallTrianglePoints[3] = {points[0], points[1], points[2]};
-//        int coef = 4;
+
         if (smallTrianglePoints[1].y == smallTrianglePoints[2].y) {
-            smallTrianglePoints[0].x += coef * _a / (_step * 2);
-            smallTrianglePoints[0].y += coef * _h / _step;
-            smallTrianglePoints[2].x += coef * _a / _step;
+            if (rnd % 3) {
+//                 toRight
+                smallTrianglePoints[0].x += deltaX2;
+                smallTrianglePoints[0].y += deltaY;
+                smallTrianglePoints[2].x += deltaX;
+            } else if (rnd % 2) {
+                // toLeft
+                smallTrianglePoints[0].x -= deltaX2;
+                smallTrianglePoints[0].y += deltaY;
+                smallTrianglePoints[1].x -= deltaX;
+            } else {
+                // toUp
+//                smallTrianglePoints[1].x -= deltaX2;
+//                smallTrianglePoints[1].y -= deltaY;
+//                smallTrianglePoints[2].x += deltaX2;
+//                smallTrianglePoints[2].y -= deltaY;
+            }
         }
 
         if (smallTrianglePoints[0].y == smallTrianglePoints[1].y) {
-            smallTrianglePoints[0].x += coef * _a / _step;
-            smallTrianglePoints[2].x += coef * _a / (_step * 2);
-            smallTrianglePoints[2].y -= coef * _h / _step;
+            if (rnd % 3) {
+//                 toRight
+                smallTrianglePoints[0].x += deltaX;
+                smallTrianglePoints[2].x += deltaX2;
+                smallTrianglePoints[2].y -= deltaY;
+            } else if (rnd % 2) {
+//                 toLeft
+                smallTrianglePoints[1].x -= deltaX;
+                smallTrianglePoints[2].x -= deltaX2;
+                smallTrianglePoints[2].y -= deltaY;
+            } else {
+                // toDown
+//                smallTrianglePoints[0].x += deltaX2;
+//                smallTrianglePoints[0].y += deltaY;
+//                smallTrianglePoints[1].x -= deltaX2;
+//                smallTrianglePoints[1].y += deltaY;
+            }
         }
 
         _addTriangle(smallTrianglePoints);
@@ -224,10 +247,10 @@ Painter::Painter(std::string filename, int a) :
         _filename(filename),
         _a(a),
         _h(SQRT3 * a / 2),
-        _step(4),
+        _step(3),
         _callbacks{
                 &Painter::_blur,
-                &Painter::_fill,
+//                &Painter::_fill,
                 &Painter::_bw,
 
                 &Painter::_inc_saturate,
@@ -238,17 +261,18 @@ Painter::Painter(std::string filename, int a) :
 
                 &Painter::_nothing
         },
-        _scale{1.0 / 6, 1.0 / 10, 1.0 / 10,
+        _scale{1.0 / 6, /*1.0 / 10,*/ 1.0 / 10,
                1.0 / 6, 1.0 / 6,
                1.0 / 6, 1.0 / 6,
                1} {
 
     _calculate_scale();
 
-//    for (auto i : _scale) {
-//        cout << i << " ";
-//    }
-//    cout << endl;
+    for (auto i = _scale.begin(); i != _scale.end(); i++) {
+        cout << std::distance(_scale.begin(), i) << " : " << *i << endl;
+    }
+
+    cout << endl;
 
 
 //    _img = cv::imread(_filename, 1);
