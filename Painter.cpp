@@ -117,7 +117,6 @@ void Painter::_drawLayer(int index) {
 }
 
 void Painter::_draw() {
-
     int test = 0;
     if (test) {
         int c = 0, r = 3;
@@ -206,19 +205,19 @@ void Painter::_bw(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
 }
 
 void Painter::_inc_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
-    input->convertTo(*output, CV_8UC3, 1, 20);
+    input->convertTo(*output, CV_8UC3, 1, 15);
 }
 
 void Painter::_dec_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
-    input->convertTo(*output, CV_8UC3, 1, -20);
+    input->convertTo(*output, CV_8UC3, 1, -15);
 }
 
 void Painter::_inc_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
-    input->convertTo(*output, CV_8UC3, 1.2, 0);
+    input->convertTo(*output, CV_8UC3, 1.1, 0);
 }
 
 void Painter::_dec_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
-    input->convertTo(*output, CV_8UC3, 0.8, 0);
+    input->convertTo(*output, CV_8UC3, 0.9, 0);
 }
 
 void Painter::_colorMap(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
@@ -233,7 +232,7 @@ void Painter::_nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
 Painter::Painter(std::string filename, int step, int a) :
         _filename(filename),
         _step(step),
-        _a(a / _step),
+        _a(a),
         _h(SQRT3 * _a / 2),
         _callbacks{
                 &Painter::_blur,
