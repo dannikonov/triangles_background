@@ -4,6 +4,8 @@
 #define SQRT3 1.73205080756887729352
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/contrib/contrib.hpp>
+#include <opencv2/highgui/highgui.hpp>
 //#include <opencv4/opencv2/opencv.hpp>
 //#include <boost/thread/thread.hpp>
 #include <thread>
@@ -25,30 +27,31 @@ private:
     typedef void (Painter::*CALLBACK)(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
     std::string _filename;
+    int _step;
     double _a;
     double _h;
     cv::Mat _img;
     cv::Size _size;
     int _cols;
     int _rows;
-    int _step;
 
-    std::vector<std::vector<cv::Point>> _points;
     std::vector<double> _scale;
     std::vector<cv::Mat> _layers;
 
     void _calculate_scale();
 
-    void _calculate_points();
+    cv::Point _point_by_coord(int x, int y);
 
     int _callback();
 
-    void _addTriangle(cv::Point *points);
-    void _addSmallTriangle(cv::Point *points);
+    void _add_triangle(cv::Point *points);
+    void _add_small_triangle(cv::Point *points);
 
     void _drawLayer(int index);
 
     void _draw();
+
+    void _gradient_mask(cv::Mat **input);
 
     // callbacks
     std::vector<CALLBACK> _callbacks;
@@ -67,10 +70,12 @@ private:
 
     void _dec_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
+    void _colorMap(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+
     void _nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
 public:
-    Painter(std::string filename, int a);
+    Painter(std::string filename, int step, int a);
 
     void show();
 

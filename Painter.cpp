@@ -11,34 +11,17 @@ void Painter::_calculate_scale() {
     }
 }
 
-void Painter::_calculate_points() {
-    int type = 0; // up|down // @todo test different modes!
+cv::Point Painter::_point_by_coord(int c, int r) {
+    cout << "c: " << c << " r: " << r << endl;
+    double x = c * _a / (2 * _step);
+    double y = r * _h / _step;
 
-    for (int r = 0; r <= _rows; r++) {
-        std::vector<cv::Point> row;
-        int y = round(r * _h);
+    if (x < 0) x = 0;
+    if (x >= _size.width) x = _size.width - 1;
 
-        if (r % 2) {
-            for (int c = 0; c <= _cols; c++) {
-                int x = round(c * _a);
-                if (x >= _size.width) {
-                    x = _size.width - 1;
-                }
-                row.emplace_back(cv::Point(x, y));
-            }
-        } else {
-            for (int c = 0; c <= _cols + 1; c++) {
-                int x = c ? round((c - 0.5) * _a) : 0;
-                if (x >= _size.width) {
-                    x = _size.width - 1;
-                }
-                row.emplace_back(cv::Point(x, y));
-            }
-        }
-
-        _points.push_back(row);
-    }
+    return cv::Point(x, y);
 }
+
 
 int Painter::_callback() {
     int n = _scale.size();
@@ -59,13 +42,14 @@ int Painter::_callback() {
     return r;
 }
 
-void Painter::_addTriangle(cv::Point *points) {
-    _addSmallTriangle(points);
+void Painter::_add_triangle(cv::Point *points) {
+    cout << "add: " << points[0] << points[1] << points[2] << endl;
+//    _add_small_triangle(points);
 
     fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(255, 255, 255), 8);
 }
 
-void Painter::_addSmallTriangle(cv::Point *points) {
+void Painter::_add_small_triangle(cv::Point *points) {
     int min = 1;
     int max = _step - 1;
     int coef = rand() % (max - min) + min;
@@ -117,7 +101,7 @@ void Painter::_addSmallTriangle(cv::Point *points) {
             }
         }
 
-        _addTriangle(smallTrianglePoints);
+        _add_triangle(smallTrianglePoints);
 //        fillConvexPoly(_layers[_callback()], smallTrianglePoints, 3, cv::Scalar(255, 255, 255), 8);
     }
 }
@@ -133,58 +117,53 @@ void Painter::_drawLayer(int index) {
 }
 
 void Painter::_draw() {
+
     int test = 0;
     if (test) {
-        int c = 1, r = 2;
+        int c = 0, r = 3;
         cv::Point p1[3] = {
-                _points[r][c],
-                _points[r + 1][c + 1],
-                _points[r + 1][c],
+                _point_by_coord(c, r),
+                _point_by_coord(c + _step, r + _step),
+                _point_by_coord(c - _step, r + _step)
         };
-        _addTriangle(p1);
+
+        _add_triangle(p1);
     } else {
-        for (int r = 0; r < _rows; r++) {
-            if (r % 2) {
-                for (int c = 0; c < _cols + 1; c++) {
-                    // half
+        for (int r = 0; r < _rows * _step; r += _step) {
+            if ((r / _step) % 2) {
+
+                for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
                     cv::Point p1[3] = {
-                            _points[r][c],
-                            _points[r + 1][c + 1],
-                            _points[r + 1][c],
+                            _point_by_coord(c, r),
+                            _point_by_coord(c + _step, r + _step),
+                            _point_by_coord(c - _step, r + _step)
                     };
 
-                    _addTriangle(p1);
+                    _add_triangle(p1);
 
-                    // full
-                    if (c != _cols) {
-                        cv::Point p2[3] = {
-                                _points[r][c],
-                                _points[r][c + 1],
-                                _points[r + 1][c + 1],
-                        };
-                        _addTriangle(p2);
-                    }
+                    cv::Point p2[3] = {
+                            _point_by_coord(c + _step, r + _step),
+                            _point_by_coord(c + 2 * _step, r),
+                            _point_by_coord(c, r)
+                    };
+                    _add_triangle(p2);
                 }
             } else {
-                for (int c = 0; c < _cols + 1; c++) {
-                    // half
-                    cv::Point p2[3] = {
-                            _points[r][c],
-                            _points[r][c + 1],
-                            _points[r + 1][c],
+                for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
+                    cv::Point p1[3] = {
+                            _point_by_coord(c + _step, r),
+                            _point_by_coord(c + 2 * _step, r + _step),
+                            _point_by_coord(c, r + _step)
                     };
-                    _addTriangle(p2);
 
-                    // full
-                    if (c != _cols) {
-                        cv::Point p1[3] = {
-                                _points[r][c + 1],
-                                _points[r + 1][c + 1],
-                                _points[r + 1][c],
-                        };
+                    _add_triangle(p1);
 
-                        _addTriangle(p1);
-                    }
+                    cv::Point p2[3] = {
+                            _point_by_coord(c, r + _step),
+                            _point_by_coord(c - _step, r),
+                            _point_by_coord(c + _step, r)
+                    };
+                    _add_triangle(p2);
                 }
             }
         }
@@ -200,6 +179,10 @@ void Painter::_draw() {
             th.join();
         }
     }
+}
+
+void Painter::_gradient_mask(cv::Mat **input) {
+
 }
 
 void Painter::_blur(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
@@ -238,18 +221,23 @@ void Painter::_dec_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
     input->convertTo(*output, CV_8UC3, 0.8, 0);
 }
 
+void Painter::_colorMap(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
+    applyColorMap(*input, *output, cv::COLORMAP_BONE);
+}
+
 void Painter::_nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
     *output = *input;
 }
 
 // public
-Painter::Painter(std::string filename, int a) :
+Painter::Painter(std::string filename, int step, int a) :
         _filename(filename),
-        _a(a),
-        _h(SQRT3 * a / 2),
-        _step(3),
+        _step(step),
+        _a(a / _step),
+        _h(SQRT3 * _a / 2),
         _callbacks{
                 &Painter::_blur,
+                &Painter::_colorMap,
 //                &Painter::_fill,
                 &Painter::_bw,
 
@@ -261,7 +249,7 @@ Painter::Painter(std::string filename, int a) :
 
                 &Painter::_nothing
         },
-        _scale{1.0 / 6, /*1.0 / 10,*/ 1.0 / 10,
+        _scale{1.0 / 6, 1.0 / 10, 1.0 / 10,
                1.0 / 6, 1.0 / 6,
                1.0 / 6, 1.0 / 6,
                1} {
@@ -289,14 +277,12 @@ Painter::Painter(std::string filename, int a) :
 
     cout << "w: " << img_new_w << " h: " << img_new_h << endl;
     cout << "cols: " << _cols << " rows: " << _rows << endl;
-    cout << "a: " << a << " h: " << _h << endl;
+    cout << "a: " << _a << " h: " << _h << " step: " << _step << endl;
     cout << "h coef: " << (double) (img_h - img_new_h) * 100 / img_h << std::setprecision(5) << "%"
          << " w coef: " << (double) (img_w - img_new_w) * 100 / img_w << std::setprecision(5) << "%" << endl;
 
     _size = cv::Size(img_new_w, img_new_h);
     resize(_img, _img, _size);
-
-    _calculate_points();
 
     for (int i = 0; i < _callbacks.size(); i++) {
         _layers.push_back(cv::Mat::zeros(_img.size(), _img.type()));
