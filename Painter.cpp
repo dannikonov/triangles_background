@@ -49,63 +49,6 @@ void Painter::_add_triangle(cv::Point *points) {
     fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(255, 255, 255), 8);
 }
 
-void Painter::_add_small_triangle(cv::Point *points) {
-    int min = 1;
-    int max = _step - 1;
-    int coef = rand() % (max - min) + min;
-    double deltaX = coef * _a / _step;
-    double deltaX2 = coef * _a / (_step * 2);
-    double deltaY = coef * _h / _step;
-
-    int rnd = rand() % 10;
-    if (rnd <= 3) {
-        cv::Point smallTrianglePoints[3] = {points[0], points[1], points[2]};
-
-        if (smallTrianglePoints[1].y == smallTrianglePoints[2].y) {
-            if (rnd % 3) {
-//                 toRight
-                smallTrianglePoints[0].x += deltaX2;
-                smallTrianglePoints[0].y += deltaY;
-                smallTrianglePoints[2].x += deltaX;
-            } else if (rnd % 2) {
-                // toLeft
-                smallTrianglePoints[0].x -= deltaX2;
-                smallTrianglePoints[0].y += deltaY;
-                smallTrianglePoints[1].x -= deltaX;
-            } else {
-                // toUp
-//                smallTrianglePoints[1].x -= deltaX2;
-//                smallTrianglePoints[1].y -= deltaY;
-//                smallTrianglePoints[2].x += deltaX2;
-//                smallTrianglePoints[2].y -= deltaY;
-            }
-        }
-
-        if (smallTrianglePoints[0].y == smallTrianglePoints[1].y) {
-            if (rnd % 3) {
-//                 toRight
-                smallTrianglePoints[0].x += deltaX;
-                smallTrianglePoints[2].x += deltaX2;
-                smallTrianglePoints[2].y -= deltaY;
-            } else if (rnd % 2) {
-//                 toLeft
-                smallTrianglePoints[1].x -= deltaX;
-                smallTrianglePoints[2].x -= deltaX2;
-                smallTrianglePoints[2].y -= deltaY;
-            } else {
-                // toDown
-//                smallTrianglePoints[0].x += deltaX2;
-//                smallTrianglePoints[0].y += deltaY;
-//                smallTrianglePoints[1].x -= deltaX2;
-//                smallTrianglePoints[1].y += deltaY;
-            }
-        }
-
-        _add_triangle(smallTrianglePoints);
-//        fillConvexPoly(_layers[_callback()], smallTrianglePoints, 3, cv::Scalar(255, 255, 255), 8);
-    }
-}
-
 void Painter::_drawLayer(int index) {
     cv::Mat roi = cv::Mat::zeros(_img.size(), _img.type());
 
@@ -130,7 +73,6 @@ void Painter::_draw() {
     } else {
         for (int r = 0; r < _rows * _step; r += _step) {
             if ((r / _step) % 2) {
-
                 for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
                     cv::Point p1[3] = {
                             _point_by_coord(c, r),
@@ -163,6 +105,21 @@ void Painter::_draw() {
                             _point_by_coord(c + _step, r)
                     };
                     _add_triangle(p2);
+                }
+            }
+
+            // add small
+            for (int c = 0; c < _cols * 2 * _step + 1; c += _step) {
+                int rnd = rand() % (_step + 1);
+
+                if (rnd < (_step / 2 + 1)) {
+                    cv::Point p1[3] = {
+                            _point_by_coord(c, r),
+                            _point_by_coord(c + rnd, r + rnd),
+                            _point_by_coord(c - rnd, r + rnd)
+                    };
+
+                    _add_triangle(p1);
                 }
             }
         }

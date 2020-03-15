@@ -45,7 +45,6 @@ private:
     int _callback();
 
     void _add_triangle(cv::Point *points);
-    void _add_small_triangle(cv::Point *points);
 
     void _drawLayer(int index);
 

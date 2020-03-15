@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    Painter *p = new Painter(filename, 3, a);
+    Painter *p = new Painter(filename, 6, a);
     p->show();
     p->save("/tmp/test2_out.jpg");
 
