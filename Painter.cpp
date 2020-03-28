@@ -3,11 +3,9 @@
 // private
 void Painter::_calculate_scale() {
     int n = _callbacks.size();
-    _scale.insert(_scale.begin(), 1, 0);
-    _scale.insert(_scale.end(), 1, 1);
 
     for (int i = 1; i <= n; i++) {
-        _scale[i] += _scale[i - 1];
+        _callbacks[i].second += _callbacks[i - 1].second;
     }
 }
 
@@ -24,22 +22,18 @@ cv::Point Painter::_point_by_coord(int c, int r) {
 
 
 int Painter::_callback() {
-    int n = _scale.size();
+    int n = _callbacks.size();
     int r = -1;
 
     double r_norm = (double) rand() / RAND_MAX;
 
-    for (int i = 0; i < n - 1; i++) {
-        if (_scale[i] < r_norm && r_norm <= _scale[i + 1]) {
-            r = i;
+    int i = 0;
+    do {
+        if (r_norm < _callbacks[i].second) {
+            return i;
         }
-    }
-
-    if (r == -1) {
-        r = n;
-    }
-
-    return r;
+        i++;
+    } while (i < n);
 }
 
 void Painter::_add_triangle(cv::Point *points) {
@@ -52,7 +46,7 @@ void Painter::_add_triangle(cv::Point *points) {
 void Painter::_drawLayer(int index) {
     cv::Mat roi = cv::Mat::zeros(_img.size(), _img.type());
 
-    CALLBACK f = _callbacks[index];
+    CALLBACK f = _callbacks[index].first;
     (this->*f)(&_img, &roi, &_layers[index]);
 
     cv::Mat Result = (_img & (~_layers[index])) + roi;
@@ -192,29 +186,23 @@ Painter::Painter(std::string filename, int step, int a) :
         _a(a),
         _h(SQRT3 * _a / 2),
         _callbacks{
-                &Painter::_blur,
-                &Painter::_colorMap,
-//                &Painter::_fill,
-                &Painter::_bw,
+                CALLBACK_PAIR(&Painter::_blur, 1.0 / 6),
+                CALLBACK_PAIR(&Painter::_fill, 1.0 / 10),
 
-                &Painter::_inc_saturate,
-                &Painter::_dec_saturate,
+                CALLBACK_PAIR(&Painter::_bw, 1.0 / 10),
 
-                &Painter::_inc_lightness,
-                &Painter::_dec_lightness,
+                CALLBACK_PAIR(&Painter::_inc_saturate, 1.0 / 8),
+                CALLBACK_PAIR(&Painter::_dec_saturate, 1.0 / 8),
 
-                &Painter::_nothing
-        },
-        _scale{1.0 / 6, 1.0 / 10, 1.0 / 10,
-               1.0 / 6, 1.0 / 6,
-               1.0 / 6, 1.0 / 6,
-               1} {
+                CALLBACK_PAIR(&Painter::_inc_lightness, 1.0 / 6),
+                CALLBACK_PAIR(&Painter::_dec_lightness, 1.0 / 6),
+
+                CALLBACK_PAIR(&Painter::_colorMap, 0),
+
+                CALLBACK_PAIR(&Painter::_nothing, 1),
+        } {
 
     _calculate_scale();
-
-    for (auto i = _scale.begin(); i != _scale.end(); i++) {
-        cout << std::distance(_scale.begin(), i) << " : " << *i << endl;
-    }
 
     cout << endl;
 

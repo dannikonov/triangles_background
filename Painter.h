@@ -25,6 +25,7 @@ using std::endl;
 class Painter {
 private:
     typedef void (Painter::*CALLBACK)(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
+    typedef std::pair<CALLBACK , double> CALLBACK_PAIR;
 
     std::string _filename;
     int _step;
@@ -35,7 +36,6 @@ private:
     int _cols;
     int _rows;
 
-    std::vector<double> _scale;
     std::vector<cv::Mat> _layers;
 
     void _calculate_scale();
@@ -53,7 +53,7 @@ private:
     void _gradient_mask(cv::Mat **input);
 
     // callbacks
-    std::vector<CALLBACK> _callbacks;
+    std::vector<CALLBACK_PAIR> _callbacks;
 
     void _blur(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
