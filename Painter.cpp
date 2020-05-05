@@ -2,15 +2,28 @@
 
 // private
 void Painter::_calculate_scale() {
+    // delete empty callbacks
+    for (auto it = _callbacks.begin(); it != _callbacks.end(); /* NOTHING */) {
+        if (it->second == 0) {
+            it = _callbacks.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     int n = _callbacks.size();
 
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i < n; i++) {
         _callbacks[i].second += _callbacks[i - 1].second;
+    }
+
+    int i = 0;
+    for (auto it = _callbacks.begin(); it != _callbacks.end(); it++) {
+        cout << "callback[" << i++ << "]: " << it->second << endl;
     }
 }
 
 cv::Point Painter::_point_by_coord(int c, int r) {
-    cout << "c: " << c << " r: " << r << endl;
     double x = c * _a / (2 * _step);
     double y = r * _h / _step;
 
@@ -23,7 +36,6 @@ cv::Point Painter::_point_by_coord(int c, int r) {
 
 int Painter::_callback() {
     int n = _callbacks.size();
-    int r = -1;
 
     double r_norm = (double) rand() / RAND_MAX;
 
@@ -37,9 +49,9 @@ int Painter::_callback() {
 }
 
 void Painter::_add_triangle(cv::Point *points) {
-    cout << "add: " << points[0] << points[1] << points[2] << endl;
 //    _add_small_triangle(points);
 
+//    fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(1, 1, 1), 8);
     fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(255, 255, 255), 8);
 }
 
@@ -48,9 +60,16 @@ void Painter::_drawLayer(int index) {
 
     CALLBACK f = _callbacks[index].first;
     (this->*f)(&_img, &roi, &_layers[index]);
+//    cv::blur(roi, roi, cv::Size(21, 21));
 
     cv::Mat Result = (_img & (~_layers[index])) + roi;
     Result.copyTo(_img, _layers[index]);
+
+    /*
+    cv::Mat Result2;
+    Result.copyTo(Result2, _layers[index]);
+    addWeighted(Result2, 0.2, _img, 0.8, 0, _img);
+    */
 }
 
 void Painter::_draw() {
@@ -103,10 +122,11 @@ void Painter::_draw() {
             }
 
             // add small
+
             for (int c = 0; c < _cols * 2 * _step + 1; c += _step) {
                 int rnd = rand() % (_step + 1);
 
-                if (rnd < (_step / 2 + 1)) {
+                if (0 < rnd && rnd < (_step / 2 + 1)) {
                     cv::Point p1[3] = {
                             _point_by_coord(c, r),
                             _point_by_coord(c + rnd, r + rnd),
@@ -186,25 +206,21 @@ Painter::Painter(std::string filename, int step, int a) :
         _a(a),
         _h(SQRT3 * _a / 2),
         _callbacks{
-                CALLBACK_PAIR(&Painter::_blur, 1.0 / 6),
-                CALLBACK_PAIR(&Painter::_fill, 1.0 / 10),
+                CALLBACK_PAIR(&Painter::_blur, 0.1),
+                CALLBACK_PAIR(&Painter::_fill, 0.08),
 
-                CALLBACK_PAIR(&Painter::_bw, 1.0 / 10),
+                CALLBACK_PAIR(&Painter::_inc_saturate, 0.2), // +
+                CALLBACK_PAIR(&Painter::_dec_saturate, 0.2), // +
 
-                CALLBACK_PAIR(&Painter::_inc_saturate, 1.0 / 8),
-                CALLBACK_PAIR(&Painter::_dec_saturate, 1.0 / 8),
+                CALLBACK_PAIR(&Painter::_inc_lightness, 0.2),
+                CALLBACK_PAIR(&Painter::_dec_lightness, 0.2),
 
-                CALLBACK_PAIR(&Painter::_inc_lightness, 1.0 / 6),
-                CALLBACK_PAIR(&Painter::_dec_lightness, 1.0 / 6),
-
-                CALLBACK_PAIR(&Painter::_colorMap, 0),
-
-                CALLBACK_PAIR(&Painter::_nothing, 1),
+                CALLBACK_PAIR(&Painter::_bw, 0),
+//                CALLBACK_PAIR(&Painter::_colorMap, 1.0 / 100),
+                CALLBACK_PAIR(&Painter::_nothing, 1) // default
         } {
 
     _calculate_scale();
-
-    cout << endl;
 
 
 //    _img = cv::imread(_filename, 1);

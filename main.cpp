@@ -12,19 +12,22 @@ int main(int argc, char *argv[]) {
     clock_t tStart = clock();
 
     std::string filename = "";
+    std::string outfilename = "";
+
     int a = 0;
-    if (argc >= 3) {
+    if (argc >= 4) {
         filename = argv[1];
-        a = atoi(argv[2]);
+        outfilename = argv[2];
+        a = atoi(argv[3]);
     }
 
     if (filename.empty() || a == 0) {
         return 0;
     }
 
-    Painter *p = new Painter(filename, 6, a);
-    p->show();
-    p->save("/tmp/test2_out.jpg");
+    Painter *p = new Painter(filename, 4, a);
+//    p->show();
+    p->save(outfilename);
 
     delete p;
 
