@@ -1,5 +1,7 @@
 #include "Painter.h"
 
+#include <utility>
+
 // private
 void Painter::_calculate_scale() {
     // delete empty callbacks
@@ -18,23 +20,97 @@ void Painter::_calculate_scale() {
     }
 
     int i = 0;
-    for (auto it = _callbacks.begin(); it != _callbacks.end(); it++) {
-        cout << "callback[" << i++ << "]: " << it->second << endl;
+    for (auto &_callback : _callbacks) {
+        cout << "callback[" << i++ << "]: " << _callback.second << endl;
+    }
+}
+
+void Painter::_calculate_test_triangles() {
+    int c = 0, r = 3;
+    cv::Point p1[3] = {
+            _point_by_coord(c, r),
+            _point_by_coord(c + _step, r + _step),
+            _point_by_coord(c - _step, r + _step)
+    };
+
+    _add_triangle(p1);
+}
+
+void Painter::_calculate_triangles() {
+    for (int r = 0; r < _rows * _step; r += _step) {
+        if ((r / _step) % 2) {
+            for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
+                TRIANGLE p1 = {
+                        _point_by_coord(c, r),
+                        _point_by_coord(c + _step, r + _step),
+                        _point_by_coord(c - _step, r + _step)
+                };
+
+                _add_triangle(p1);
+
+                TRIANGLE p2 = {
+                        _point_by_coord(c + _step, r + _step),
+                        _point_by_coord(c + 2 * _step, r),
+                        _point_by_coord(c, r)
+                };
+                _add_triangle(p2);
+            }
+        } else {
+            for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
+                TRIANGLE p1 = {
+                        _point_by_coord(c + _step, r),
+                        _point_by_coord(c + 2 * _step, r + _step),
+                        _point_by_coord(c, r + _step)
+                };
+
+                _add_triangle(p1);
+
+                TRIANGLE p2 = {
+                        _point_by_coord(c, r + _step),
+                        _point_by_coord(c - _step, r),
+                        _point_by_coord(c + _step, r)
+                };
+                _add_triangle(p2);
+            }
+        }
+    }
+}
+
+void Painter::_calculate_small_triangle() {
+    for (int r = 0; r < _rows * _step; r += _step) {
+        for (int c = 0; c < _cols * 2 * _step + 1; c += _step) {
+            int rnd = rand() % (_step + 1);
+
+            if (0 < rnd && rnd < (_step / 2 + 1)) {
+                TRIANGLE p1 = {
+                        _point_by_coord(c, r),
+                        _point_by_coord(c + rnd, r + rnd),
+                        _point_by_coord(c - rnd, r + rnd)
+                };
+
+                _add_triangle(p1);
+            }
+        }
     }
 }
 
 cv::Point Painter::_point_by_coord(int c, int r) {
-    double x = c * _a / (2 * _step);
-    double y = r * _h / _step;
+    COORDS cr = std::make_pair(c, r);
 
-    if (x < 0) x = 0;
-    if (x >= _size.width) x = _size.width - 1;
+    if (_points.find(cr) == _points.end()) {
+        double x = c * _a / (2 * _step);
+        double y = r * _h / _step;
 
-    return cv::Point(x, y);
+        if (x < 0) x = 0;
+        if (x >= _size.width) x = _size.width - 1;
+
+        _points.insert({cr, cv::Point(x, y)});
+    }
+
+    return _points.at(cr);
 }
 
-
-int Painter::_callback() {
+cv::Mat &Painter::_get_random_layer() {
     int n = _callbacks.size();
 
     double r_norm = (double) rand() / RAND_MAX;
@@ -42,17 +118,19 @@ int Painter::_callback() {
     int i = 0;
     do {
         if (r_norm < _callbacks[i].second) {
-            return i;
+            break;
         }
+
         i++;
     } while (i < n);
+
+    return _layers[i];
 }
 
-void Painter::_add_triangle(cv::Point *points) {
-//    _add_small_triangle(points);
+void Painter::_add_triangle(TRIANGLE points) {
+    _triangles.push_back(points);
 
-//    fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(1, 1, 1), 8);
-    fillConvexPoly(_layers[_callback()], points, 3, cv::Scalar(255, 255, 255), 8);
+    fillConvexPoly(_get_random_layer(), points, 3, cv::Scalar(255, 255, 255), 8);
 }
 
 void Painter::_drawLayer(int index) {
@@ -72,88 +150,9 @@ void Painter::_drawLayer(int index) {
     */
 }
 
-void Painter::_draw() {
-    int test = 0;
-    if (test) {
-        int c = 0, r = 3;
-        cv::Point p1[3] = {
-                _point_by_coord(c, r),
-                _point_by_coord(c + _step, r + _step),
-                _point_by_coord(c - _step, r + _step)
-        };
-
-        _add_triangle(p1);
-    } else {
-        for (int r = 0; r < _rows * _step; r += _step) {
-            if ((r / _step) % 2) {
-                for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
-                    cv::Point p1[3] = {
-                            _point_by_coord(c, r),
-                            _point_by_coord(c + _step, r + _step),
-                            _point_by_coord(c - _step, r + _step)
-                    };
-
-                    _add_triangle(p1);
-
-                    cv::Point p2[3] = {
-                            _point_by_coord(c + _step, r + _step),
-                            _point_by_coord(c + 2 * _step, r),
-                            _point_by_coord(c, r)
-                    };
-                    _add_triangle(p2);
-                }
-            } else {
-                for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
-                    cv::Point p1[3] = {
-                            _point_by_coord(c + _step, r),
-                            _point_by_coord(c + 2 * _step, r + _step),
-                            _point_by_coord(c, r + _step)
-                    };
-
-                    _add_triangle(p1);
-
-                    cv::Point p2[3] = {
-                            _point_by_coord(c, r + _step),
-                            _point_by_coord(c - _step, r),
-                            _point_by_coord(c + _step, r)
-                    };
-                    _add_triangle(p2);
-                }
-            }
-
-            // add small
-
-            for (int c = 0; c < _cols * 2 * _step + 1; c += _step) {
-                int rnd = rand() % (_step + 1);
-
-                if (0 < rnd && rnd < (_step / 2 + 1)) {
-                    cv::Point p1[3] = {
-                            _point_by_coord(c, r),
-                            _point_by_coord(c + rnd, r + rnd),
-                            _point_by_coord(c - rnd, r + rnd)
-                    };
-
-                    _add_triangle(p1);
-                }
-            }
-        }
-    }
-
-    std::vector<std::thread> t;
-    for (int i = 0; i < _callbacks.size(); i++) {
-        t.push_back(std::move(std::thread(&Painter::_drawLayer, this, i)));
-    }
-
-    for (std::thread &th : t) {
-        if (th.joinable()) {
-            th.join();
-        }
-    }
-}
-
-void Painter::_gradient_mask(cv::Mat **input) {
-
-}
+//void Painter::_gradient_mask(cv::Mat **input) {
+//
+//}
 
 void Painter::_blur(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
     cv::blur(*input, *output, cv::Size(10, 10));
@@ -201,39 +200,39 @@ void Painter::_nothing(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
 
 // public
 Painter::Painter(std::string filename, int step, int a) :
-        _filename(filename),
+        _filename(std::move(filename)),
         _step(step),
         _a(a),
         _h(SQRT3 * _a / 2),
+        _points(),
+        _triangles(),
         _callbacks{
                 CALLBACK_PAIR(&Painter::_blur, 0.1),
-                CALLBACK_PAIR(&Painter::_fill, 0.08),
+//                CALLBACK_PAIR(&Painter::_fill, 0.08),
 
                 CALLBACK_PAIR(&Painter::_inc_saturate, 0.2), // +
                 CALLBACK_PAIR(&Painter::_dec_saturate, 0.2), // +
 
-                CALLBACK_PAIR(&Painter::_inc_lightness, 0.2),
-                CALLBACK_PAIR(&Painter::_dec_lightness, 0.2),
+//                CALLBACK_PAIR(&Painter::_inc_lightness, 0.2),
+//                CALLBACK_PAIR(&Painter::_dec_lightness, 0.2),
 
-                CALLBACK_PAIR(&Painter::_bw, 0),
+//                CALLBACK_PAIR(&Painter::_bw, 0),
 //                CALLBACK_PAIR(&Painter::_colorMap, 1.0 / 100),
                 CALLBACK_PAIR(&Painter::_nothing, 1) // default
         } {
 
-    _calculate_scale();
-
 
 //    _img = cv::imread(_filename, 1);
-    _img = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);
+    _img = cv::imread(_filename, cv::IMREAD_COLOR);
 
     int img_w = _img.size().width;
     int img_h = _img.size().height;
 
-    _cols = round(img_w / _a);
-    _rows = round(img_h / _h);
+    _cols = (int) round(img_w / _a);
+    _rows = (int) round(img_h / _h);
 
-    int img_new_w = round(_cols * _a);
-    int img_new_h = round(_rows * _h);
+    int img_new_w = (int) round(_cols * _a);
+    int img_new_h = (int) round(_rows * _h);
 
     cout << "w: " << img_new_w << " h: " << img_new_h << endl;
     cout << "cols: " << _cols << " rows: " << _rows << endl;
@@ -245,10 +244,26 @@ Painter::Painter(std::string filename, int step, int a) :
     resize(_img, _img, _size);
 
     for (int i = 0; i < _callbacks.size(); i++) {
+        cout << "type" << _img.type();
         _layers.push_back(cv::Mat::zeros(_img.size(), _img.type()));
     }
+}
 
-    _draw();
+void Painter::draw() {
+    _calculate_scale();
+    _calculate_triangles();
+    _calculate_small_triangle();
+
+    std::vector<std::thread> t;
+    for (int i = 0; i < _callbacks.size(); i++) {
+        t.push_back(std::move(std::thread(&Painter::_drawLayer, this, i)));
+    }
+
+    for (std::thread &th : t) {
+        if (th.joinable()) {
+            th.join();
+        }
+    }
 }
 
 void Painter::show() {
@@ -256,6 +271,6 @@ void Painter::show() {
     cv::waitKey();
 }
 
-void Painter::save(std::string filename) {
+void Painter::save(const std::string &filename) {
     imwrite(filename, _img);
 }

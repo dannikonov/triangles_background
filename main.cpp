@@ -1,39 +1,46 @@
 #include "Painter.h"
+#include "Example.h"
 
-#include <time.h>
+
+#include <ctime>
+// start arguments
+// "/tmp/test.jpg" "/tmp/test_t.jpg" 1400
 
 int main(int argc, char *argv[]) {
-    srand(time(NULL));
-
-    time_t start, end;
-    time(&start);
-
 //    int CORES = static_cast<int>(boost::thread::hardware_concurrency());
     clock_t tStart = clock();
 
-    std::string filename = "";
-    std::string outfilename = "";
+    if (argc == 2) {
+        // example mode
+        auto *p = new Example("/tmp/tri/test.jpg");
+//        p->bw_with_mask();
+        p->mask_use_alpha();
+        p->show();
 
-    int a = 0;
-    if (argc >= 4) {
-        filename = argv[1];
-        outfilename = argv[2];
-        a = atoi(argv[3]);
-    }
-
-    if (filename.empty() || a == 0) {
         return 0;
     }
 
-    Painter *p = new Painter(filename, 4, a);
-//    p->show();
-    p->save(outfilename);
+    if (argc >= 4) {
 
-    delete p;
+        int a = 0;
+        std::string filename = argv[1];
+        std::string outfilename = argv[2];
+
+        a = atoi(argv[3]);
+
+        if (filename.empty() || a == 0) {
+            return 0;
+        }
+
+        auto *p = new Painter(filename, 4, a);
+        p->draw();
+//    p->show();
+        p->save(outfilename);
+
+        delete p;
+    }
 
     cout << endl << "Time taken: " << (double) (clock() - tStart) / CLOCKS_PER_SEC << endl;
-    time(&end);
-    cout << std::fixed << double(end - start) << std::setprecision(5) << endl;
 
     return 0;
 }

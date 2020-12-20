@@ -17,11 +17,11 @@ endif ()
 
 #add_compile_options(-std=c++0x)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-add_executable(triangulate main.cpp Painter.cpp Painter.h)
+add_executable(triangulate main.cpp Painter.cpp Painter.h Example.cpp Example.h)
 
 target_link_libraries(triangulate ${Boost_LIBRARIES} ${OpenCV_LIBS})

@@ -33,4 +33,13 @@
 
 
 .idea
+
+# build
 cmake-build-debug
+CMakeFiles
+CMakeCache.txt
+triangulate
+cmake_install.cmake
+Makefile
+
+Testing
