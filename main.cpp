@@ -3,18 +3,31 @@
 
 
 #include <ctime>
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
 // start arguments
-// "/tmp/test.jpg" "/tmp/test_t.jpg" 1400
+// for test mode
+// : example
+// for real mode
+// : "/tmp/test.jpg" "/tmp/test_t.jpg" 1400
 
 int main(int argc, char *argv[]) {
+    std::string target = "/tmp/tri";
+    if (!boost::filesystem::exists(target)) {
+        boost::filesystem::create_directory(target);
+    }
+
 //    int CORES = static_cast<int>(boost::thread::hardware_concurrency());
     clock_t tStart = clock();
 
     if (argc == 2) {
         // example mode
         auto *p = new Example("/tmp/tri/test.jpg");
-//        p->bw_with_mask();
-        p->mask_use_alpha();
+
+        p->bw_with_mask();
+//        p->mask_use_alpha();
         p->show();
 
         return 0;
@@ -34,7 +47,7 @@ int main(int argc, char *argv[]) {
 
         auto *p = new Painter(filename, 4, a);
         p->draw();
-//    p->show();
+    p->show();
         p->save(outfilename);
 
         delete p;

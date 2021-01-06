@@ -52,11 +52,15 @@ private:
 
     cv::Mat &_get_random_layer();
 
-    void _add_triangle(TRIANGLE);
+    void _add_triangle(cv::Mat &layer, TRIANGLE points);
+
+    void _add_gradient_triangle(cv::Mat &layer, TRIANGLE points);
+
+    void _gradient_section(cv::Mat &mask, TRIANGLE points);
 
     void _drawLayer(int index);
 
-//    void _gradient_mask(cv::Mat **input);
+    void _drawLayerAdvanced(int index);
 
     // callbacks
     std::vector<CALLBACK_PAIR> _callbacks;
