@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
         auto *p = new Painter(filename, 4, a);
         p->draw();
-    p->show();
+//        p->show();
         p->save(outfilename);
 
         delete p;
