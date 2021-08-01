@@ -33,8 +33,8 @@ void Painter::_calculate_test_triangles() {
             point_by_coord(c + _step, r + _step),
             point_by_coord(c - _step, r + _step)
     };
-
-    add_triangle(get_random_layer(), p1);
+// @todo
+//    add_triangle(get_random_layer(), p1);
 
     cv::Point p2[3] = {
             point_by_coord(5, 5),
@@ -42,7 +42,8 @@ void Painter::_calculate_test_triangles() {
             point_by_coord(5, 7)
     };
 
-    add_triangle(get_random_layer(), p2);
+// @todo
+//    add_triangle(get_random_layer(), p2);
 }
 
 void Painter::_calculate_triangles() {
@@ -57,8 +58,7 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c - _step, r + _step)
                 };
 
-                t.push_back(std::move(std::thread(&Painter::add_triangle, this, std::ref(get_random_layer()), p1)));
-//                add_triangle(get_random_layer(), p1);
+                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
 
                 TRIANGLE p2 = {
                         point_by_coord(c + _step, r + _step),
@@ -66,8 +66,7 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c, r)
                 };
 
-//                add_triangle(get_random_layer(), p2);
-                t.push_back(std::move(std::thread(&Painter::add_triangle, this, std::ref(get_random_layer()), p2)));
+                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p2)));
 
             }
         } else {
@@ -78,8 +77,7 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c, r + _step)
                 };
 
-//                add_triangle(get_random_layer(), p1);
-                t.push_back(std::move(std::thread(&Painter::add_triangle, this, std::ref(get_random_layer()), p1)));
+                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
 
                 TRIANGLE p2 = {
                         point_by_coord(c, r + _step),
@@ -87,8 +85,7 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c + _step, r)
                 };
 
-//                add_triangle(get_random_layer(), p2);
-                t.push_back(std::move(std::thread(&Painter::add_triangle, this, std::ref(get_random_layer()), p2)));
+                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p2)));
             }
         }
 
@@ -118,8 +115,7 @@ void Painter::calculate_small_triangle() {
                         point_by_coord(c - rnd, r + rnd)
                 };
 
-//                add_triangle(get_random_layer(), p1);
-                t.push_back(std::move(std::thread(&Painter::add_triangle, this, std::ref(get_random_layer()), p1)));
+                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
             }
         }
 
@@ -147,70 +143,24 @@ cv::Point Painter::point_by_coord(int c, int r) {
     return _points.at(cr);
 }
 
-cv::Mat &Painter::get_random_layer() {
+Layer *Painter::get_random_layer() {
     double r_norm = (double) rand() / RAND_MAX;
 
     for (auto &it : _probability) {
         if (r_norm < it.second) {
-            return _layers.at(it.first)->get_mask();
+            return _layers.at(it.first);
         }
     }
 
-    return _layers.at(std::prev(_probability.end())->first)->get_mask();
+    return _layers.at(std::prev(_probability.end())->first);
 }
 
-void Painter::add_triangle(cv::Mat &layer, TRIANGLE points) {
-//    if (static_cast<int>(rand()) % 5 == 0) {
-    add_solid_triangle(layer, points);
-//    } else {
-//        add_gradient_triangle(layer, points);
-//    }
-}
 
-void Painter::add_solid_triangle(cv::Mat &layer, cv::Point points[3]) {
-    fillConvexPoly(layer, points, 3, cv::Scalar(255), 8);
-}
-
-void Painter::add_gradient_triangle(cv::Mat &layer, TRIANGLE points) {
-    cv::Mat mask = cv::Mat(layer.size(), layer.type(), cv::Scalar(0));
-    add_solid_triangle(mask, points);
-
-    cv::Mat gradient = cv::Mat(layer.size(), layer.type(), cv::Scalar(0));
-    gradient_section(gradient, points);
-
-    gradient.copyTo(layer, mask);
-}
-
-void Painter::gradient_section(cv::Mat &mask, TRIANGLE points) {
-    std::sort(points, points + 3, [](cv::Point a, cv::Point b) { return a.y < b.y; });
-
-    int ymin = points[0].y;
-    int ymax = points[2].y;
-
-    int rows = ymax - ymin + 1;
-
-    bool gradient_direction_inc = static_cast<int>(rand()) % 2;
-
-    int color_start = 0;
-    int color_end = 255;
-    if (!gradient_direction_inc) {
-        std::swap(color_start, color_end);
-    }
-
-    int color;
-    double delta = static_cast<double>(color_end - color_start) / (rows - 1);
-
-    for (int r = ymin, i = 1; r < ymax; r++, i++) {
-        color = static_cast<int> (round(color_start + delta * i));
-        mask.row(r).setTo(cv::Scalar(color));
-    }
-}
-
-void Painter::drawLayer(Layer &layer) {
+void Painter::drawLayer(Layer *layer) {
     cv::Mat img_f = cv::Mat::zeros(_img.size(), _img.type());
 
-    FILTER f = layer.get_filter();
-    cv::Mat layer_mask = layer.get_mask();
+    FILTER f = layer->get_filter();
+    cv::Mat layer_mask = layer->get_mask();
 
     f(&_img, &img_f, &layer_mask);
 
@@ -330,7 +280,7 @@ void Painter::draw() {
     tStart = clock();
     std::vector<std::thread> t;
     for (auto &it: _layers) {
-        t.push_back(std::move(std::thread(&Painter::drawLayer, this, std::ref(*it.second))));
+        t.push_back(std::move(std::thread(&Painter::drawLayer, this, std::ref(it.second))));
     }
 
     for (std::thread &th : t) {

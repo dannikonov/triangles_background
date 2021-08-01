@@ -47,17 +47,9 @@ private:
 
     cv::Point point_by_coord(int x, int y);
 
-    cv::Mat &get_random_layer();
+    Layer *get_random_layer();
 
-    void add_triangle(cv::Mat &layer, TRIANGLE points);
-
-    void add_solid_triangle(cv::Mat &layer, TRIANGLE points);
-
-    void add_gradient_triangle(cv::Mat &layer, TRIANGLE points);
-
-    void gradient_section(cv::Mat &mask, TRIANGLE points);
-
-    void drawLayer(Layer &layer);
+    void drawLayer(Layer *layer);
 
     void init_filters();
 
