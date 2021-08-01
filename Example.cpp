@@ -88,7 +88,7 @@ void Example::mask_use_alpha() {
 
     cv::Mat Result = (_img & (~_mask)) + filter;
 
-//    Result = Result.mul(_mask);
+//    Result = Result.mul(mask);
 // Result += filter;
 
     Result.copyTo(_img, _mask);

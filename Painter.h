@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <map>
 #include <ctime>
+#include "Filter.h"
 
 using std::cout;
 using std::endl;
@@ -32,30 +33,33 @@ private:
     int _rows;
     std::map<std::pair<int, int>, cv::Point> _points;
     std::map<int, Layer *> _layers;
-    std::map<int, double> _filters;
+//    std::map<std::string, double> _filters;
     std::map<int, double> _probability;
+    std::map<int, FILTER> _filters;
 
-    void _calculate_probability();
+    void _calculate_probability(std::map<int, double> &probability);
 
     void _calculate_test_triangles();
 
     void _calculate_triangles();
 
-    void _calculate_small_triangle();
+    void calculate_small_triangle();
 
-    cv::Point _point_by_coord(int x, int y);
+    cv::Point point_by_coord(int x, int y);
 
-    cv::Mat &_get_random_layer();
+    cv::Mat &get_random_layer();
 
-    void _add_triangle(cv::Mat &layer, TRIANGLE points);
+    void add_triangle(cv::Mat &layer, TRIANGLE points);
 
-    void _add_solid_triangle(cv::Mat &layer, TRIANGLE points);
+    void add_solid_triangle(cv::Mat &layer, TRIANGLE points);
 
-    void _add_gradient_triangle(cv::Mat &layer, TRIANGLE points);
+    void add_gradient_triangle(cv::Mat &layer, TRIANGLE points);
 
-    void _gradient_section(cv::Mat &mask, TRIANGLE points);
+    void gradient_section(cv::Mat &mask, TRIANGLE points);
 
-    void _drawLayer(Layer &layer);
+    void drawLayer(Layer &layer);
+
+    void init_filters();
 
 public:
     Painter(std::string filename, int step, int a);
