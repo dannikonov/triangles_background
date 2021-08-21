@@ -11,7 +11,7 @@
 // for test mode
 // : example
 // for real mode
-// : "/tmp/test.jpg" "/tmp/test_t.jpg" 1400
+// : "/tmp/before.jpg" "/tmp/after.jpg" 1400
 
 int main(int argc, char *argv[]) {
     std::string target = "/tmp/tri";
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 2) {
         // example mode
-        auto *p = new Example("/tmp/tri/test.jpg");
+        auto *p = new Example("/tmp/tri/before.jpg");
 
         p->bw_with_mask();
 //        p->mask_use_alpha();

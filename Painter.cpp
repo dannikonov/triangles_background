@@ -256,7 +256,7 @@ void Painter::draw() {
 
     tStart = clock();
     std::map<int, double> probability = {
-            {FILTER_BLUR,          0.15},
+            {FILTER_BLUR,          0.10},
 // @todo fill doesn't work
 //            {FILTER_FILL,          0.08},
             {FILTER_INC_SATURATE,  0.15}, // +

@@ -74,22 +74,22 @@ private:
 
     static void inc_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
         std::cout << "call inc_saturate" << std::endl;
-        input->convertTo(*output, CV_8UC3, 1, 15);
+        input->convertTo(*output, CV_8UC3, 1, 25);
     };
 
     static void dec_saturate(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
         std::cout << "call dec_saturate" << std::endl;
-        input->convertTo(*output, CV_8UC3, 1, -15);
+        input->convertTo(*output, CV_8UC3, 1, -25);
     };
 
     static void inc_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
         std::cout << "call inc_lightness" << std::endl;
-        input->convertTo(*output, CV_8UC3, 1.1, 0);
+        input->convertTo(*output, CV_8UC3, 1.2, 0);
     };
 
     static void dec_lightness(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
         std::cout << "call dec_lightness" << std::endl;
-        input->convertTo(*output, CV_8UC3, 0.9, 0);
+        input->convertTo(*output, CV_8UC3, 0.8, 0);
     };
 
     static void colormap(cv::Mat *input, cv::Mat *output, cv::Mat *mask) {
