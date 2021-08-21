@@ -2,7 +2,7 @@
 
 // public
 Layer::Layer(cv::Size size, FILTER filter) :
-        mask(cv::Mat(size, CV_8U, cv::Scalar(0))),
+        layer_mask(cv::Mat(size, CV_8U, cv::Scalar(0))),
         filter(filter) {
     std::srand(std::time(nullptr));
 }
@@ -11,7 +11,7 @@ Layer::~Layer() {
 }
 
 cv::Mat &Layer::get_mask() {
-    return mask;
+    return layer_mask;
 }
 
 FILTER Layer::get_filter() {
@@ -19,32 +19,36 @@ FILTER Layer::get_filter() {
 }
 
 void Layer::add_triangle(TRIANGLE points) {
+//    if (static_cast<int>(rand()) % 3 == 0) {
+//        add_solid_triangle(layer_mask, points);
+//    } else {
+    add_gradient_triangle(layer_mask, points);
+//    }
+}
+
+void Layer::add_solid_triangle(cv::Mat target, TRIANGLE points) {
+//    cout << points[0] << points[1] << points[2] << endl;
+
     mtx.lock();
-    if (static_cast<int>(rand()) % 3 == 0) {
-        add_solid_triangle(points);
-    } else {
-        add_gradient_triangle(points);
-    }
+    fillConvexPoly(target, points, 3, cv::Scalar(255), 8);
     mtx.unlock();
 }
 
-void Layer::add_solid_triangle(TRIANGLE points) {
-    fillConvexPoly(mask, points, 3, cv::Scalar(255), 8);
-}
-
 // @todo mask2
-void Layer::add_gradient_triangle(TRIANGLE points) {
-    cv::Mat mask2 = cv::Mat(mask.size(), mask.type(), cv::Scalar(0));
-    add_solid_triangle(points);
+void Layer::add_gradient_triangle(cv::Mat target, TRIANGLE points) {
+    cv::Mat mask = cv::Mat(target.size(), target.type(), cv::Scalar(0));
+    add_solid_triangle(mask, points);
 
-    cv::Mat gradient = cv::Mat(mask.size(), mask.type(), cv::Scalar(0));
+    cv::Mat gradient = cv::Mat(target.size(), target.type(), cv::Scalar(0));
     gradient_section(gradient, points);
 
-    gradient.copyTo(mask, mask2);
+    mtx.lock();
+    gradient.copyTo(target, mask);
+    mtx.unlock();
 }
 
-// @todo mask2
-void Layer::gradient_section(cv::Mat &mask2, TRIANGLE points) {
+// @todo mask
+void Layer::gradient_section(cv::Mat &mask, TRIANGLE points) {
     std::sort(points, points + 3, [](cv::Point a, cv::Point b) { return a.y < b.y; });
 
     int ymin = points[0].y;
@@ -65,7 +69,7 @@ void Layer::gradient_section(cv::Mat &mask2, TRIANGLE points) {
 
     for (int r = ymin, i = 1; r < ymax; r++, i++) {
         color = static_cast<int> (round(color_start + delta * i));
-        mask2.row(r).setTo(cv::Scalar(color));
+        mask.row(r).setTo(cv::Scalar(color));
     }
 }
 

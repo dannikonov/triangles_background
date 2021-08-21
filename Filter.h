@@ -18,7 +18,7 @@
 using FILTER = void (*)(cv::Mat *input, cv::Mat *output, cv::Mat *mask);
 
 class Filter {
-//    std::function<void(cv::Mat *input, cv::Mat *output, cv::Mat *mask)> FILTER;
+//    std::function<void(cv::Mat *input, cv::Mat *output, cv::Mat *layer_mask)> FILTER;
 
 public:
     static FILTER get_filter(int filter) {

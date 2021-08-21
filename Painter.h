@@ -49,7 +49,7 @@ private:
 
     Layer *get_random_layer();
 
-    void drawLayer(Layer *layer);
+    void drawLayer(Layer *layer, int t);
 
     void init_filters();
 

@@ -17,7 +17,7 @@ typedef cv::Point TRIANGLE[3];
 
 class Layer {
 private:
-    cv::Mat mask;
+    cv::Mat layer_mask;
     FILTER filter;
     std::mutex mtx;
 
@@ -32,12 +32,12 @@ public:
 
     void add_triangle(TRIANGLE points);
 
-    void add_solid_triangle(TRIANGLE points);
+    void add_solid_triangle(cv::Mat target, TRIANGLE points);
 
-    void add_gradient_triangle(TRIANGLE points);
+    void add_gradient_triangle(cv::Mat target, TRIANGLE points);
 
-    // @todo mask2
-    void gradient_section(cv::Mat &mask2, TRIANGLE points);
+    // @todo mask
+    void gradient_section(cv::Mat &mask, TRIANGLE points);
 };
 
 #endif //TRIANGULATE_LAYER_H

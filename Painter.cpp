@@ -58,7 +58,8 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c - _step, r + _step)
                 };
 
-                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
+                get_random_layer()->add_triangle(p1);
+//                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
 
                 TRIANGLE p2 = {
                         point_by_coord(c + _step, r + _step),
@@ -66,8 +67,8 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c, r)
                 };
 
-                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p2)));
-
+                get_random_layer()->add_triangle(p2);
+//                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p2)));
             }
         } else {
             for (int c = 0; c < _cols * 2 * _step + 1; c += 2 * _step) {
@@ -77,7 +78,8 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c, r + _step)
                 };
 
-                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
+                get_random_layer()->add_triangle(p1);
+//                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
 
                 TRIANGLE p2 = {
                         point_by_coord(c, r + _step),
@@ -85,15 +87,17 @@ void Painter::_calculate_triangles() {
                         point_by_coord(c + _step, r)
                 };
 
-                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p2)));
+                get_random_layer()->add_triangle(p2);
+//                cout << " add " << p2[0] << p2[1] << p2[2] << endl;
+//                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p2)));
             }
         }
 
-        for (std::thread &th : t) {
-            if (th.joinable()) {
-                th.join();
-            }
-        }
+//        for (std::thread &th : t) {
+//            if (th.joinable()) {
+//                th.join();
+//            }
+//        }
     }
 
 }
@@ -115,15 +119,16 @@ void Painter::calculate_small_triangle() {
                         point_by_coord(c - rnd, r + rnd)
                 };
 
-                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
+//                t.push_back(std::move(std::thread(&Layer::add_triangle, get_random_layer(), p1)));
+                get_random_layer()->add_triangle(p1);
             }
         }
 
-        for (std::thread &th : t) {
-            if (th.joinable()) {
-                th.join();
-            }
-        }
+//        for (std::thread &th : t) {
+//            if (th.joinable()) {
+//                th.join();
+//            }
+//        }
     }
 }
 
@@ -156,7 +161,8 @@ Layer *Painter::get_random_layer() {
 }
 
 
-void Painter::drawLayer(Layer *layer) {
+void Painter::drawLayer(Layer *layer, int t) {
+    cout << "t:" << t << " " << sched_getcpu() << endl;
     cv::Mat img_f = cv::Mat::zeros(_img.size(), _img.type());
 
     FILTER f = layer->get_filter();
@@ -250,16 +256,16 @@ void Painter::draw() {
 
     tStart = clock();
     std::map<int, double> probability = {
-            {FILTER_BLUR,          0.2},
+            {FILTER_BLUR,          0.15},
 // @todo fill doesn't work
 //            {FILTER_FILL,          0.08},
-            {FILTER_INC_SATURATE,  0.2}, // +
-            {FILTER_DEC_SATURATE,  0.2}, // +
-            {FILTER_INC_LIGHTNESS, 0.1},
-            {FILTER_DEC_LIGHTNESS, 0.1},
-            {FILTER_BW,            0.1},
+            {FILTER_INC_SATURATE,  0.15}, // +
+            {FILTER_DEC_SATURATE,  0.15}, // +
+            {FILTER_INC_LIGHTNESS, 0.15},
+            {FILTER_DEC_LIGHTNESS, 0.15},
+            {FILTER_BW,      0.1},
 //            {FILTER_COLORMAP,      0.1},
-            {FILTER_NOTHING,       1} // default
+            {FILTER_NOTHING, 1} // default
     };
 
 
@@ -274,13 +280,16 @@ void Painter::draw() {
 
     tStart = clock();
     // @todo optimize
-//    calculate_small_triangle();
+    calculate_small_triangle();
     cout << "calculate_small_triangle: " << (double) (clock() - tStart) / CLOCKS_PER_SEC << endl;
 
     tStart = clock();
     std::vector<std::thread> t;
+
+    int i = 0;
     for (auto &it: _layers) {
-        t.push_back(std::move(std::thread(&Painter::drawLayer, this, std::ref(it.second))));
+        t.push_back(std::move(std::thread(&Painter::drawLayer, this, std::ref(it.second), i)));
+        i++;
     }
 
     for (std::thread &th : t) {

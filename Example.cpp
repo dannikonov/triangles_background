@@ -18,7 +18,7 @@ Example::Example(std::string filename)
     cv::rectangle(_img, cv::Rect(0.1 * c, 0.1 * r, 0.8 * c, 0.8 * r), green, -1);
     cv::circle(_img, cv::Point(0.5 * c, 0.5 * r),  r / 5, red, -1);
 
-    // init mask
+    // init layer_mask
     _mask = cv::Mat(_size, CV_8U, cv::Scalar(0));
     cv::Point triangle[3] = {
             cv::Point(_size.width, _size.height),
@@ -88,7 +88,7 @@ void Example::mask_use_alpha() {
 
     cv::Mat Result = (_img & (~_mask)) + filter;
 
-//    Result = Result.mul(mask);
+//    Result = Result.mul(layer_mask);
 // Result += filter;
 
     Result.copyTo(_img, _mask);
